@@ -23,7 +23,7 @@ template do
     gmail_password = ask('Password:')
   end
   
-  compass = yes?('Install Compass?')
+  compass = false # yes?('Install Compass?')
   
   # Delete unneeded files
   run 'rm README'
@@ -51,7 +51,7 @@ template do
   git :add => '.'
   git :commit => "-m 'first!'"
 
-  # Setup Compass
+  # SetupS Compass
   if compass
     load_template('http://compass-style.org/rails/installer') if compass
     git :add => '.'
