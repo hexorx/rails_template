@@ -11,6 +11,8 @@ template do
   # Gather some info
   puts
   interwebs = yes?('Are you connected to the Interwebs? (if not, make sure ~/projects/rails_template is valid)')
+  clearance = interwebs && yes?('Install clearance?')
+  paperclip = interwebs && yes?('Install paperclip?')
   deploy = interwebs && yes?('Want to deploy to Heroku?')
   freeze = yes?('Freeze everything?')
   appname = `pwd`.split('/').last.strip
@@ -19,6 +21,10 @@ template do
   if gmail = yes?('Use Gmail to send mail?')
     gmail_address = ask('Full gmail address:')
     gmail_password = ask('Password:')
+  end
+  
+  if yes?('Install Compass?')
+    load_template('http://compass-style.org/rails/installer')
   end
 
   # Delete unneeded files
@@ -50,6 +56,7 @@ template do
   # Download jQuery
   if interwebs
     run 'curl -L http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js > public/javascripts/jquery.js'
+    run "curl -L http://jqueryjs.googlecode.com/svn/trunk/plugins/form/jquery.form.js > public/javascripts/jquery.form.js"
   else
     run 'cp ~/projects/rails_template/files/jquery.js public/javascripts/jquery.js'
   end
@@ -57,10 +64,7 @@ template do
   git :commit => "-m 'add jquery'"
 
   # Gems
-  heroku_gem 'thoughtbot-factory_girl', :source => 'http://gems.github.com', :lib => 'factory_girl'
-  heroku_gem 'thoughtbot-paperclip',    :source => 'http://gems.github.com', :lib => 'paperclip'
-  heroku_gem 'ambethia-smtp-tls',       :source => 'http://gems.github.com', :lib => 'smtp-tls'
-  heroku_gem 'mislav-will_paginate',    :source => 'http://gems.github.com', :lib => 'will_paginate'
+  heroku_gem 'thoughtbot-paperclip', :source => 'http://gems.github.com', :lib => 'paperclip' if paperclip
   rake 'gems:unpack gems:build' if freeze
   git :add => '.'
   git :commit => "-m 'add gems'"
@@ -146,13 +150,15 @@ template do
   git :commit => "-m 'add default rake task'"
 
   # Authentication
-  heroku_gem 'thoughtbot-clearance', :lib => 'clearance', :source => 'http://gems.github.com'
-  rake 'gems:unpack' if freeze
-  generate :clearance
-  generate :clearance_features, '-f'
-  rake 'db:migrate'
-  git :add => '.'
-  git :commit => "-m 'add clearance'"
+  if clearance
+    heroku_gem 'thoughtbot-clearance', :lib => 'clearance', :source => 'http://gems.github.com'
+    rake 'gems:unpack' if freeze
+    generate :clearance
+    generate :clearance_features, '-f'
+    rake 'db:migrate'
+    git :add => '.'
+    git :commit => "-m 'add clearance'"
+  end
 
   # Remove the default routes and add root to make clearance happy
   file 'config/routes.rb', <<-CODE.gsub(/^    /,'')
@@ -174,6 +180,7 @@ template do
 
   # Set up gmail for sending mail
   if gmail
+    heroku_gem 'ambethia-smtp-tls', :source => 'http://gems.github.com', :lib => 'smtp-tls'
     environment <<-CODE.gsub(/^      /,''), :env => 'production'
       config.action_mailer.smtp_settings = {
         :address        => "smtp.gmail.com",
@@ -184,42 +191,45 @@ template do
         :password       => "#{gmail_password}" 
       }
     CODE
+    git :add => '.'
+    git :commit => "-m 'setup gmail configuration'"
   end
-  git :add => '.'
-  git :commit => "-m 'setup gmail configuration'"
+
 
   # Provide a placeholder for S3 info
-  generate :nifty_config, 'paperclip'
-  file 'config/paperclip_config.yml', <<-CODE.gsub(/^    /,'')
-    # USAGE: has_attached_file :photo, { :styles => { :thumb => "24x24#" }}.merge(PAPERCLIP_CONFIG)
+  if paperclip
+    generate :nifty_config, 'paperclip'
+    file 'config/paperclip_config.yml', <<-CODE.gsub(/^    /,'')
+      # USAGE: has_attached_file :photo, { :styles => { :thumb => "24x24#" }}.merge(PAPERCLIP_CONFIG)
 
-    local: &local
-      url:  '/system/:attachment/:style/:id_partition/:basename.:extension'
-      path: '/:rails_root/public/system/:attachment/:style/:id_partition/:basename.:extension'
+      local: &local
+        url:  '/system/:attachment/:style/:id_partition/:basename.:extension'
+        path: '/:rails_root/public/system/:attachment/:style/:id_partition/:basename.:extension'
 
-    s3: &s3
-      storage: :s3
-      s3_credentials: 
-        access_key_id:     
-        secret_access_key: 
-      path:   ':attachment/:id/:style.:extension'
-      bucket: 'vacationtrade.com'
+      s3: &s3
+        storage: :s3
+        s3_credentials: 
+          access_key_id:     
+          secret_access_key: 
+        path:   ':attachment/:id/:style.:extension'
+        bucket: 'vacationtrade.com'
 
-    development:
-      <<: *local
-      #<<: *s3
+      development:
+        <<: *local
+        #<<: *s3
 
-    test:
-      <<: *local
+      test:
+        <<: *local
 
-    cucumber:
-      <<: *local
+      cucumber:
+        <<: *local
 
-    production:
-      <<: *s3
-  CODE
-  git :add => '.'
-  git :commit => "-m 'add placeholder for S3 configuration'"
+      production:
+        <<: *s3
+    CODE
+    git :add => '.'
+    git :commit => "-m 'add placeholder for S3 configuration'"
+  end
   
 
   # Start with a reasonable layout to work with
