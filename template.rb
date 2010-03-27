@@ -70,9 +70,11 @@ template do
   git :commit => "-m 'add gems'"
 
   # HAML
-  run "haml --rails ."
-  git :add => '.'
-  git :commit => "-m 'use haml'"
+  unless compass
+    run "haml --rails ."
+    git :add => '.'
+    git :commit => "-m 'use haml'"
+  end
 
   # Static Pages
   if interwebs
