@@ -23,10 +23,8 @@ template do
     gmail_password = ask('Password:')
   end
   
-  if yes?('Install Compass?')
-    load_template('http://compass-style.org/rails/installer')
-  end
-
+  compass = yes?('Install Compass?')
+  
   # Delete unneeded files
   run 'rm README'
   run 'rm public/index.html'
@@ -53,6 +51,13 @@ template do
   git :add => '.'
   git :commit => "-m 'first!'"
 
+  # Setup Compass
+  if compass
+    load_template('http://compass-style.org/rails/installer') if compass
+    git :add => '.'
+    git :commit => "-m 'setup compass'"
+  end
+  
   # Download jQuery
   if interwebs
     run 'curl -L http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js > public/javascripts/jquery.js'
