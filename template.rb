@@ -23,7 +23,7 @@ template do
     gmail_password = ask('Password:')
   end
   
-  compass = false # yes?('Install Compass?')
+  compass = yes?('Install Compass?')
   
   # Delete unneeded files
   run 'rm README'
