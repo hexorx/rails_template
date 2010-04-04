@@ -69,7 +69,7 @@ template do
   git :commit => "-m 'add jquery'"
 
   # Gems
-  heroku_gem 'thoughtbot-paperclip', :source => 'http://gems.github.com', :lib => 'paperclip' if paperclip
+  heroku_gem 'paperclip' if paperclip
   rake 'gems:unpack gems:build' if freeze
   git :add => '.'
   git :commit => "-m 'add gems'"
@@ -158,7 +158,7 @@ template do
 
   # Authentication
   if clearance
-    heroku_gem 'thoughtbot-clearance', :lib => 'clearance', :source => 'http://gems.github.com'
+    heroku_gem 'clearance'
     rake 'gems:unpack' if freeze
     generate :clearance
     generate :clearance_features, '-f'
@@ -187,7 +187,7 @@ template do
 
   # Set up gmail for sending mail
   if gmail
-    heroku_gem 'ambethia-smtp-tls', :source => 'http://gems.github.com', :lib => 'smtp-tls'
+    heroku_gem 'smtp_tls'
     environment <<-CODE.gsub(/^      /,''), :env => 'production'
       config.action_mailer.smtp_settings = {
         :address        => "smtp.gmail.com",
